@@ -156,7 +156,7 @@ This project is ready to be deployed on Vercel.
 Replace this with your final deployed link:
 
 ```text
-https://your-project-name.vercel.app
+https://unthinkable-social-media-app.vercel.app/
 ```
 
 ## Notes
