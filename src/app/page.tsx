@@ -87,16 +87,6 @@ export default function Home() {
         </div>
       </header>
 
-      <section className={styles.deploymentSection}>
-        <div className={styles.deploymentCard}>
-          <span className={styles.deploymentLabel}>Deployed Vercel Link</span>
-          <a href={deploymentUrl} target="_blank" rel="noreferrer" className={styles.deploymentLink}>
-            {deploymentUrl}
-          </a>
-          <small>Replace this with your final live Vercel deployment URL.</small>
-        </div>
-      </section>
-
       <section className={styles.mainSection}>
         <div className={`glass-card ${styles.uploadCard}`}>
           <h2>Upload Document</h2>
