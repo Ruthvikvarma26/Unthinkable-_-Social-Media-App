@@ -1,0 +1,308 @@
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 3rem;
+  padding-bottom: 4rem;
+}
+
+.hero {
+  text-align: center;
+  margin-top: 2rem;
+}
+
+.heroContent h1 {
+  font-size: 3rem;
+  font-weight: 800;
+  margin-bottom: 1rem;
+  letter-spacing: -0.05em;
+}
+
+.gradientText {
+  background: linear-gradient(135deg, var(--primary) 0%, #7209b7 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.heroContent p {
+  font-size: 1.25rem;
+  color: var(--foreground);
+  opacity: 0.8;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.mainSection {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  align-items: center;
+  width: 100%;
+}
+
+.uploadCard {
+  width: 100%;
+  max-width: 800px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.subtitle {
+  color: var(--foreground);
+  opacity: 0.7;
+  margin-bottom: 2rem;
+}
+
+.dropZone {
+  border: 2px dashed rgba(67, 97, 238, 0.3);
+  border-radius: var(--radius);
+  width: 100%;
+  min-height: 250px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+@media (prefers-color-scheme: dark) {
+  .dropZone {
+    background: rgba(0, 0, 0, 0.2);
+  }
+}
+
+.dropZone:hover, .dragging {
+  border-color: var(--primary);
+  background: rgba(67, 97, 238, 0.05);
+  transform: scale(1.01);
+}
+
+.hiddenInput {
+  display: none;
+}
+
+.uploadPrompt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  pointer-events: none;
+}
+
+.uploadIcon {
+  color: var(--primary);
+  opacity: 0.8;
+}
+
+.uploadPrompt p {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.uploadPrompt span {
+  font-size: 0.85rem;
+  opacity: 0.6;
+}
+
+.fileSelected {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.fileIcon {
+  color: var(--success);
+  margin-bottom: 0.5rem;
+}
+
+.fileSelected p {
+  margin: 0;
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.fileSize {
+  font-size: 0.9rem;
+  opacity: 0.7;
+}
+
+.errorAlert {
+  margin-top: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--error);
+  background: rgba(239, 35, 60, 0.1);
+  padding: 1rem;
+  border-radius: 8px;
+  width: 100%;
+  text-align: left;
+}
+
+.errorAlert p {
+  margin: 0;
+}
+
+.analyzeBtn {
+  margin-top: 2rem;
+  width: 100%;
+  max-width: 300px;
+  height: 52px;
+}
+
+.loader {
+  width: 24px;
+  height: 24px;
+  border: 3px solid rgba(255,255,255,0.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.resultCard {
+  width: 100%;
+  max-width: 1000px;
+  animation: slideUp 0.5s ease;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.resultHeader {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--card-border);
+}
+
+.resultHeader h2 {
+  margin: 0;
+}
+
+.successIcon {
+  color: var(--success);
+}
+
+.resultGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+
+@media (max-width: 768px) {
+  .resultGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.extractedText, .aiSuggestions {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  .extractedText, .aiSuggestions {
+    background: rgba(0, 0, 0, 0.2);
+  }
+}
+
+.textContent {
+  font-family: monospace;
+  white-space: pre-wrap;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  background: rgba(0, 0, 0, 0.05);
+  padding: 1rem;
+  border-radius: 8px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+@media (prefers-color-scheme: dark) {
+  .textContent {
+    background: rgba(255, 255, 255, 0.05);
+  }
+}
+
+.suggestionsList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.suggestionItem {
+  background: var(--card-bg);
+  padding: 1.25rem;
+  border-radius: 8px;
+  border-left: 4px solid var(--primary);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.suggestionItem h4 {
+  margin-bottom: 0.5rem;
+  color: var(--primary);
+  font-size: 1.1rem;
+}
+
+.suggestionItem p {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.deploymentSection {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+.deploymentCard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1.25rem 1.5rem;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(98, 110, 255, 0.2);
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.05);
+}
+
+.deploymentLabel {
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.deploymentLink {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--foreground);
+  text-decoration: underline;
+  word-break: break-all;
+}
+
+.deploymentCard small {
+  opacity: 0.75;
+}
+
+@media (prefers-color-scheme: dark) {
+  .deploymentCard {
+    background: rgba(15, 23, 42, 0.25);
+  }
+}
