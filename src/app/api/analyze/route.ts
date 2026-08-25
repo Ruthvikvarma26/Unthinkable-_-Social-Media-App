@@ -3,7 +3,6 @@ import { pathToFileURL } from 'node:url';
 import { NextRequest, NextResponse } from 'next/server';
 import { PDFParse } from 'pdf-parse';
 import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist/legacy/build/pdf.mjs';
-import { createWorker } from 'tesseract.js';
 import { GoogleGenAI } from '@google/genai';
 import sharp from 'sharp';
 
@@ -152,11 +151,12 @@ async function extractImageText(buffer: Buffer): Promise<string> {
 
   let worker;
   try {
+    // Use Tesseract.js with explicit worker configuration for serverless
+    const Tesseract = await import('tesseract.js');
+    
     worker = await withTimeout(
-      createWorker('eng', 1, {
+      Tesseract.createWorker('eng', 1, {
         logger: () => undefined,
-        // Disable local caching for serverless environments
-        cachePath: undefined,
       }),
       'Image OCR worker startup timed out after 30 seconds'
     );
@@ -169,7 +169,8 @@ async function extractImageText(buffer: Buffer): Promise<string> {
     return result?.data?.text?.trim() || '';
   } catch (error) {
     console.warn('OCR worker failed:', error);
-    return '';
+    // Return a helpful error message for serverless environments
+    return 'OCR is not available in this environment. Please upload a PDF file for text extraction, or try using the application locally.';
   } finally {
     if (worker) {
       await worker.terminate();
