@@ -156,6 +156,9 @@ async function extractImageText(buffer: Buffer): Promise<string> {
       createWorker('eng', 1, {
         logger: () => undefined,
         cachePath: path.join(process.cwd(), '.tesseract-cache'),
+        // Use CDN for trained data in serverless environments
+        langPath: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@5.0.3/tessdata/',
+        gzip: true,
       }),
       'Image OCR worker startup timed out after 30 seconds'
     );
