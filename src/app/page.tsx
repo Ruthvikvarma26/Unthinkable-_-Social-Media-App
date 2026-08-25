@@ -5,7 +5,6 @@ import styles from './page.module.css';
 import { UploadCloud, FileText, FileImage, Sparkles, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 export default function Home() {
-  const deploymentUrl = 'https://your-project-name.vercel.app';
   const [file, setFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -55,6 +54,9 @@ export default function Home() {
     setLoading(true);
     setError(null);
     
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 35000);
+    
     try {
       const formData = new FormData();
       formData.append('file', file);
@@ -62,18 +64,36 @@ export default function Home() {
       const res = await fetch('/api/analyze', {
         method: 'POST',
         body: formData,
+        signal: controller.signal,
       });
 
       if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || 'Failed to analyze content');
+        const contentType = res.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+          const errorData = await res.json();
+          throw new Error(errorData.error || 'Failed to analyze content');
+        }
+
+        const text = await res.text();
+        throw new Error(text || 'Failed to analyze content');
+      }
+
+      const contentType = res.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        const text = await res.text();
+        throw new Error(text || 'Invalid server response');
       }
 
       const data = await res.json();
       setResult(data);
     } catch (err: any) {
-      setError(err.message);
+      if (err?.name === 'AbortError') {
+        setError('Request timed out while analyzing the image. Please try a clearer image or a PDF.');
+      } else {
+        setError(err.message || 'Something went wrong while analyzing the file.');
+      }
     } finally {
+      clearTimeout(timeoutId);
       setLoading(false);
     }
   };

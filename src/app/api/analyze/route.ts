@@ -3,8 +3,9 @@ import { pathToFileURL } from 'node:url';
 import { NextRequest, NextResponse } from 'next/server';
 import { PDFParse } from 'pdf-parse';
 import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist/legacy/build/pdf.mjs';
-import Tesseract from 'tesseract.js';
+import { createWorker } from 'tesseract.js';
 import { GoogleGenAI } from '@google/genai';
+import sharp from 'sharp';
 
 const pdfWorkerUrl = pathToFileURL(
   path.join(process.cwd(), 'node_modules', 'pdfjs-dist', 'legacy', 'build', 'pdf.worker.mjs')
@@ -48,12 +49,26 @@ async function generateSuggestions(extractedText: string) {
   const apiKey = process.env.GEMINI_API_KEY;
 
   if (!apiKey) {
+    console.warn('GEMINI_API_KEY missing. Using fallback suggestions.');
     return fallbackSuggestions;
   }
 
   try {
     const ai = new GoogleGenAI({ apiKey });
-    const prompt = `You are an expert social media strategist. Analyze the text below and provide 3-5 specific, actionable suggestions to improve engagement. Return only valid JSON array with objects: {"title":"string","content":"string"}.\n\nText:\n${extractedText}`;
+    const prompt = `
+      You are a senior social media strategist and copy editor.
+      Analyze the user's extracted text and create 3 to 5 highly specific suggestions tailored to the exact content.
+      Do not use generic filler ideas that could apply to any post.
+      Tie each suggestion directly to the content, theme, audience, and likely platform behavior in the text.
+      Return valid JSON only, with an array of objects shaped like:
+      [{"title":"string","content":"string"}]
+
+      The suggestions should be practical and actionable for engagement, reach, and clarity.
+      Avoid repeating similar ideas.
+
+      Extracted text:
+      ${extractedText}
+    `;
 
     const response = await ai.models.generateContent({
       model: 'gemini-2.0-flash',
@@ -110,6 +125,57 @@ async function extractPdfText(buffer: Buffer): Promise<string> {
   return combinedText.trim();
 }
 
+async function preprocessImageForOCR(buffer: Buffer): Promise<Buffer> {
+  const processed = await sharp(buffer)
+    .resize({ width: 2200, height: 2200, fit: 'inside', withoutEnlargement: true })
+    .grayscale()
+    .normalize()
+    .png({ compressionLevel: 9 })
+    .toBuffer();
+
+  return processed;
+}
+
+const OCR_TIMEOUT_MS = 30000;
+
+async function withTimeout<T>(task: Promise<T>, message: string): Promise<T> {
+  return Promise.race([
+    task,
+    new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error(message)), OCR_TIMEOUT_MS);
+    }),
+  ]);
+}
+
+async function extractImageText(buffer: Buffer): Promise<string> {
+  const cleanedBuffer = await preprocessImageForOCR(buffer);
+
+  let worker;
+  try {
+    worker = await withTimeout(
+      createWorker('eng', 1, {
+        logger: () => undefined,
+        cachePath: path.join(process.cwd(), '.tesseract-cache'),
+      }),
+      'Image OCR worker startup timed out after 30 seconds'
+    );
+
+    const result = await withTimeout(
+      worker.recognize(cleanedBuffer),
+      'Image OCR timed out after 30 seconds'
+    );
+
+    return result?.data?.text?.trim() || '';
+  } catch (error) {
+    console.warn('OCR worker failed:', error);
+    return '';
+  } finally {
+    if (worker) {
+      await worker.terminate();
+    }
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
@@ -136,23 +202,31 @@ export async function POST(request: NextRequest) {
       }
     } else {
       try {
-        const result = await Tesseract.recognize(buffer, 'eng');
-        extractedText = result.data.text;
+        extractedText = await extractImageText(buffer);
       } catch (err) {
         console.error('OCR error:', err);
-        return NextResponse.json({ error: 'Failed to extract text from image' }, { status: 500 });
+        extractedText = 'Unable to extract readable text from this image. Please upload a clearer image or a PDF.';
       }
     }
 
     if (!extractedText || extractedText.trim().length === 0) {
-      return NextResponse.json({ error: 'No text could be extracted from the file' }, { status: 400 });
+      extractedText = 'Image uploaded successfully. OCR could not read this file reliably. Please upload a clearer image or a PDF for the best text extraction.';
     }
 
     const suggestions = await generateSuggestions(extractedText);
 
+    // Provide lightweight debug info in non-production for troubleshooting
+    const debug: Record<string, any> = {};
+    if (process.env.NODE_ENV !== 'production') {
+      debug.hasGeminiKey = !!process.env.GEMINI_API_KEY;
+      debug.extractedLength = (extractedText || '').length;
+      debug.usedFallback = extractedText.includes('Unable to extract') || extractedText.includes('OCR could not read');
+    }
+
     return NextResponse.json({
       text: extractedText,
       suggestions,
+      debug: Object.keys(debug).length ? debug : undefined,
     });
   } catch (error: any) {
     console.error('API Error:', error);
